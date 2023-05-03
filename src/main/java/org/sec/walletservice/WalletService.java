@@ -1,5 +1,6 @@
 package org.sec.walletservice;
 
+import org.sec.walletservice.dto.AddWalletRequestDto;
 import org.sec.walletservice.entities.Currency;
 import org.sec.walletservice.entities.Wallet;
 import org.sec.walletservice.entities.WalletTransaction;
@@ -85,7 +86,7 @@ public class WalletService {
                         .timestamp(System.currentTimeMillis())
                         .build();
                 walletTransactionRepository.save(debitWalletTransaction);
-                wallet.setBalance(wallet.getBalance()-debitWalletTransaction.getAmount());
+                wallet.setBalance(wallet.getBalance() - debitWalletTransaction.getAmount());
 
                 WalletTransaction creditWalletTransaction = WalletTransaction.builder()
                         .amount(random.nextInt(10) * 1000)
@@ -94,10 +95,23 @@ public class WalletService {
                         .timestamp(System.currentTimeMillis())
                         .build();
                 walletTransactionRepository.save(creditWalletTransaction);
-                wallet.setBalance(wallet.getBalance()+creditWalletTransaction.getAmount());
+                wallet.setBalance(wallet.getBalance() + creditWalletTransaction.getAmount());
                 walletRepository.save(wallet);
             });
 
         });
+    }
+
+    public Wallet saveWallet(AddWalletRequestDto walletRequestDto) {
+        Currency currency = currencyRepository.findByCode(walletRequestDto.currencyCode()).orElseThrow(()->
+            new RuntimeException(String.format("no currency %s found" , walletRequestDto.currencyCode()))
+        );
+        Wallet wallet = Wallet.builder().balance(walletRequestDto.balance())
+                .id(UUID.randomUUID().toString())
+                .userId("userId1")
+                .createdAt(System.currentTimeMillis())
+                .currency(currency)
+                .build();
+        return walletRepository.save(wallet);
     }
 }

@@ -25,3 +25,11 @@ type Currency {
     sellPrice: Float,
     purchasePrice: Float
 }
+
+type Mutation {
+    addWallet(addWalletRequestDto: AddWalletRequestDto): Wallet
+}
+input AddWalletRequestDto {
+    currencyCode: String,
+    balance: Float
+}
