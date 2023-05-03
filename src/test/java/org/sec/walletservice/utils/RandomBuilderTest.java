@@ -13,7 +13,5 @@ public class RandomBuilderTest {
         double randomBalance = randomBuilder.buildRandomBalance(new Random());
         System.out.println(randomBalance);
         Assertions.assertTrue(randomBalance > 0);
-
-
     }
 }

@@ -93,6 +93,7 @@ public class WalletService {
                         .walletTransactionType(WalletTransactionType.CREDIT)
                         .timestamp(System.currentTimeMillis())
                         .build();
+                walletTransactionRepository.save(creditWalletTransaction);
                 wallet.setBalance(wallet.getBalance()+creditWalletTransaction.getAmount());
                 walletRepository.save(wallet);
             });

@@ -3,6 +3,7 @@ package org.sec.walletservice.web;
 import org.sec.walletservice.entities.Wallet;
 import org.sec.walletservice.repositories.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
@@ -16,5 +17,10 @@ public class GraphQLController {
     @QueryMapping
     public List<Wallet> userWallets(){
         return walletRepository.findAll();
+    }
+
+    @QueryMapping
+    public Wallet getWalletById(@Argument String id){
+        return walletRepository.findById(id).orElse(null);
     }
 }
