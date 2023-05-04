@@ -28,7 +28,7 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static java.lang.System.out;
+
 
 @Service
 @Transactional
@@ -73,35 +73,33 @@ public class WalletService {
             wallet.setBalance(randomBuilder.buildRandomBalance(random));
             wallet.setId(UUID.randomUUID().toString());
             byte[] username = "SAMUEL PEDRO".getBytes(StandardCharsets.UTF_8);
-            out.println("username samuel pedro byte value: " + Arrays.toString(username));
+            LOGGER.info("username samuel pedro byte value: {} " , Arrays.toString(username));
             StringBuilder userIdBuilder = new StringBuilder().append("WLT-")
                     .append(UUID.nameUUIDFromBytes(username));
             wallet.setUserId(userIdBuilder.toString());
             walletRepository.save(wallet);
         });
-        walletRepository.findAll().forEach(wallet -> {
-            IntStream.range(0, 10).forEach(i -> {
-                WalletTransaction debitWalletTransaction = WalletTransaction.builder()
-                        .amount(random.nextInt(10) * 1000)
-                        .wallet(wallet)
-                        .type(WalletTransactionType.DEBIT)
-                        .timestamp(System.currentTimeMillis())
-                        .build();
-                walletTransactionRepository.save(debitWalletTransaction);
-                wallet.setBalance(wallet.getBalance() - debitWalletTransaction.getAmount());
+        walletRepository.findAll().forEach(wallet ->
+                IntStream.range(0, 10).forEach(i -> {
+                    WalletTransaction debitWalletTransaction = WalletTransaction.builder()
+                            .amount(random.nextDouble(10) * 1000)
+                            .wallet(wallet)
+                            .type(WalletTransactionType.DEBIT)
+                            .timestamp(System.currentTimeMillis())
+                            .build();
+                    walletTransactionRepository.save(debitWalletTransaction);
+                    wallet.setBalance(wallet.getBalance() - debitWalletTransaction.getAmount());
 
-                WalletTransaction creditWalletTransaction = WalletTransaction.builder()
-                        .amount(random.nextInt(10) * 1000)
-                        .wallet(wallet)
-                        .type(WalletTransactionType.CREDIT)
-                        .timestamp(System.currentTimeMillis())
-                        .build();
-                walletTransactionRepository.save(creditWalletTransaction);
-                wallet.setBalance(wallet.getBalance() + creditWalletTransaction.getAmount());
-                walletRepository.save(wallet);
-            });
-
-        });
+                    WalletTransaction creditWalletTransaction = WalletTransaction.builder()
+                            .amount(random.nextDouble(10) * 1000)
+                            .wallet(wallet)
+                            .type(WalletTransactionType.CREDIT)
+                            .timestamp(System.currentTimeMillis())
+                            .build();
+                    walletTransactionRepository.save(creditWalletTransaction);
+                    wallet.setBalance(wallet.getBalance() + creditWalletTransaction.getAmount());
+                    walletRepository.save(wallet);
+                }));
     }
 
     public Wallet saveWallet(AddWalletRequestDto walletRequestDto) {

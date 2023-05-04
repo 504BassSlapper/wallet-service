@@ -15,8 +15,9 @@ type WalletTransaction {
     timestamp: Float,
     wallet: Wallet,
     amount: Float,
+    currencySellPrice: Float,
+    currencyPurchasePrice: Float,
     type: String
-
 }
 
 type Currency {
@@ -27,8 +28,10 @@ type Currency {
 }
 
 type Mutation {
-    addWallet(addWalletRequestDto: AddWalletRequestDto): Wallet
+    addWallet(addWalletRequestDto: AddWalletRequestDto): Wallet,
+    transfertToWallet(sourceWalletId: String, destinationWalletId: String, amount: Float): [WalletTransaction]
 }
+
 input AddWalletRequestDto {
     currencyCode: String,
     balance: Float
