@@ -4,10 +4,7 @@ import org.sec.walletservice.WalletService;
 import org.sec.walletservice.dto.AddWalletRequestDto;
 import org.sec.walletservice.entities.Wallet;
 import org.sec.walletservice.entities.WalletTransaction;
-import org.sec.walletservice.enums.WalletTransactionType;
-import org.sec.walletservice.repositories.CurrencyRepository;
 import org.sec.walletservice.repositories.WalletRepository;
-import org.sec.walletservice.repositories.WalletTransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -23,9 +20,6 @@ public class GraphQLController {
 
     @Autowired
     private WalletService walletService;
-
-    @Autowired
-    private WalletTransactionRepository walletTransactionRepository;
 
     @QueryMapping
     public List<Wallet> userWallets() {
@@ -43,37 +37,11 @@ public class GraphQLController {
 
     }
 
-    public void transferToWallet(String sourceWalletId, String destinationWalletId, Double amount) {
-        Wallet sourceWallet = walletRepository.findById(sourceWalletId).orElseThrow(() ->
-                new RuntimeException(String.format("Wallet %s not found", sourceWalletId)));
-        Wallet destinationWallet = walletRepository.findById(destinationWalletId).orElseThrow(() ->
-                new RuntimeException(String.format("Wallet %s not found", destinationWalletId)));
-        WalletTransaction sourceWalletTransaction = WalletTransaction.builder()
-                .timestamp(System.currentTimeMillis())
-                .walletTransactionType(WalletTransactionType.DEBIT)
-                .currencyPurchasePrice(sourceWallet.getCurrency().getPurchasePrice())
-                .currencySellPrice(sourceWallet.getCurrency().getSellPrice())
-                .amount(amount)
-                .wallet(sourceWallet)
-                .build();
-        walletTransactionRepository.save(sourceWalletTransaction);
-        sourceWallet.setBalance(sourceWallet.getBalance() - amount);
-
-        double destinationAmount = destinationWallet.getCurrency().getPurchasePrice() != 0 ?
-                amount * (sourceWallet.getCurrency().getSellPrice()
-                        / destinationWallet.getCurrency().getPurchasePrice()) : amount;
-
-        WalletTransaction destinationWalletTransaction = WalletTransaction.builder()
-                .amount(destinationAmount)
-                .timestamp(System.currentTimeMillis())
-                .currencyPurchasePrice(destinationWallet.getCurrency().getPurchasePrice())
-                .currencySellPrice(destinationWallet.getCurrency().getSellPrice())
-                .wallet(destinationWallet)
-                .walletTransactionType(WalletTransactionType.CREDIT)
-                .build();
-        walletTransactionRepository.save(destinationWalletTransaction);
-        destinationWallet.setBalance(destinationWallet.getBalance() + destinationAmount);
-
+    @MutationMapping
+    public List<WalletTransaction> transfertToWallet(@Argument String sourceWalletId,
+                                                     @Argument String destinationWalletId,
+                                                     @Argument Double amount) {
+        return walletService.transferToWallet(sourceWalletId, destinationWalletId, amount);
     }
 
 }

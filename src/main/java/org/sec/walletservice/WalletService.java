@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.lang.System.out;
+
 @Service
 @Transactional
 public class WalletService {
@@ -71,7 +73,7 @@ public class WalletService {
             wallet.setBalance(randomBuilder.buildRandomBalance(random));
             wallet.setId(UUID.randomUUID().toString());
             byte[] username = "SAMUEL PEDRO".getBytes(StandardCharsets.UTF_8);
-            System.out.println("username samuel pedro byte value: " + Arrays.toString(username));
+            out.println("username samuel pedro byte value: " + Arrays.toString(username));
             StringBuilder userIdBuilder = new StringBuilder().append("WLT-")
                     .append(UUID.nameUUIDFromBytes(username));
             wallet.setUserId(userIdBuilder.toString());
@@ -82,7 +84,7 @@ public class WalletService {
                 WalletTransaction debitWalletTransaction = WalletTransaction.builder()
                         .amount(random.nextInt(10) * 1000)
                         .wallet(wallet)
-                        .walletTransactionType(WalletTransactionType.DEBIT)
+                        .type(WalletTransactionType.DEBIT)
                         .timestamp(System.currentTimeMillis())
                         .build();
                 walletTransactionRepository.save(debitWalletTransaction);
@@ -91,7 +93,7 @@ public class WalletService {
                 WalletTransaction creditWalletTransaction = WalletTransaction.builder()
                         .amount(random.nextInt(10) * 1000)
                         .wallet(wallet)
-                        .walletTransactionType(WalletTransactionType.CREDIT)
+                        .type(WalletTransactionType.CREDIT)
                         .timestamp(System.currentTimeMillis())
                         .build();
                 walletTransactionRepository.save(creditWalletTransaction);
@@ -103,8 +105,8 @@ public class WalletService {
     }
 
     public Wallet saveWallet(AddWalletRequestDto walletRequestDto) {
-        Currency currency = currencyRepository.findByCode(walletRequestDto.currencyCode()).orElseThrow(()->
-            new RuntimeException(String.format("no currency %s found" , walletRequestDto.currencyCode()))
+        Currency currency = currencyRepository.findByCode(walletRequestDto.currencyCode()).orElseThrow(() ->
+                new RuntimeException(String.format("no currency %s found", walletRequestDto.currencyCode()))
         );
         Wallet wallet = Wallet.builder().balance(walletRequestDto.balance())
                 .id(UUID.randomUUID().toString())
@@ -113,5 +115,39 @@ public class WalletService {
                 .currency(currency)
                 .build();
         return walletRepository.save(wallet);
+    }
+
+
+    public List<WalletTransaction> transferToWallet(String sourceWalletId, String destinationWalletId, Double amount) {
+        Wallet sourceWallet = walletRepository.findById(sourceWalletId).orElseThrow(() ->
+                new RuntimeException(String.format("Wallet %s not found", sourceWalletId)));
+        Wallet destinationWallet = walletRepository.findById(destinationWalletId).orElseThrow(() ->
+                new RuntimeException(String.format("Wallet %s not found", destinationWalletId)));
+        WalletTransaction sourceWalletTransaction = WalletTransaction.builder()
+                .timestamp(System.currentTimeMillis())
+                .type(WalletTransactionType.DEBIT)
+                .currencyPurchasePrice(sourceWallet.getCurrency().getPurchasePrice())
+                .currencySellPrice(sourceWallet.getCurrency().getSellPrice())
+                .amount(amount)
+                .wallet(sourceWallet)
+                .build();
+        walletTransactionRepository.save(sourceWalletTransaction);
+        sourceWallet.setBalance(sourceWallet.getBalance() - amount);
+
+        double destinationAmount = destinationWallet.getCurrency().getPurchasePrice() != 0 ?
+                amount * (sourceWallet.getCurrency().getSellPrice()
+                        / destinationWallet.getCurrency().getPurchasePrice()) : amount;
+
+        WalletTransaction destinationWalletTransaction = WalletTransaction.builder()
+                .amount(destinationAmount)
+                .timestamp(System.currentTimeMillis())
+                .currencyPurchasePrice(destinationWallet.getCurrency().getPurchasePrice())
+                .currencySellPrice(destinationWallet.getCurrency().getSellPrice())
+                .wallet(destinationWallet)
+                .type(WalletTransactionType.CREDIT)
+                .build();
+        walletTransactionRepository.save(destinationWalletTransaction);
+        destinationWallet.setBalance(destinationWallet.getBalance() + destinationAmount);
+        return Arrays.asList(sourceWalletTransaction, destinationWalletTransaction);
     }
 }

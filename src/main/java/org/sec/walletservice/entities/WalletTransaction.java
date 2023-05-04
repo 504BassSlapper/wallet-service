@@ -19,7 +19,7 @@ public class WalletTransaction {
     private long timestamp;
     private double amount;
     @Enumerated(EnumType.STRING)
-    private WalletTransactionType walletTransactionType;
+    private WalletTransactionType type;
     @ManyToOne
     private Wallet wallet;
     private double commissionFee;
