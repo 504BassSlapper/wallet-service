@@ -22,4 +22,7 @@ public class WalletTransaction {
     private WalletTransactionType walletTransactionType;
     @ManyToOne
     private Wallet wallet;
+    private double commissionFee;
+    private double currencySellPrice;
+    private double currencyPurchasePrice;
 }

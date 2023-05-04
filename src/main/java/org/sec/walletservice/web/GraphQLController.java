@@ -43,22 +43,36 @@ public class GraphQLController {
 
     }
 
-    public void transferToWallet(String sourceWalletId, String destinationWalletId, Double amount){
-        Wallet sourceWallet = walletRepository.findById(sourceWalletId).orElseThrow(()->
+    public void transferToWallet(String sourceWalletId, String destinationWalletId, Double amount) {
+        Wallet sourceWallet = walletRepository.findById(sourceWalletId).orElseThrow(() ->
                 new RuntimeException(String.format("Wallet %s not found", sourceWalletId)));
-        Wallet destinationWallet = walletRepository.findById(destinationWalletId).orElseThrow(()->
+        Wallet destinationWallet = walletRepository.findById(destinationWalletId).orElseThrow(() ->
                 new RuntimeException(String.format("Wallet %s not found", destinationWalletId)));
         WalletTransaction sourceWalletTransaction = WalletTransaction.builder()
                 .timestamp(System.currentTimeMillis())
                 .walletTransactionType(WalletTransactionType.DEBIT)
+                .currencyPurchasePrice(sourceWallet.getCurrency().getPurchasePrice())
+                .currencySellPrice(sourceWallet.getCurrency().getSellPrice())
                 .amount(amount)
                 .wallet(sourceWallet)
                 .build();
         walletTransactionRepository.save(sourceWalletTransaction);
-        sourceWallet.setBalance(sourceWallet.getBalance()-amount);
-        WalletTransaction destinationWalletTransaction = WalletTransaction.builder().build();
+        sourceWallet.setBalance(sourceWallet.getBalance() - amount);
 
+        double destinationAmount = destinationWallet.getCurrency().getPurchasePrice() != 0 ?
+                amount * (sourceWallet.getCurrency().getSellPrice()
+                        / destinationWallet.getCurrency().getPurchasePrice()) : amount;
 
+        WalletTransaction destinationWalletTransaction = WalletTransaction.builder()
+                .amount(destinationAmount)
+                .timestamp(System.currentTimeMillis())
+                .currencyPurchasePrice(destinationWallet.getCurrency().getPurchasePrice())
+                .currencySellPrice(destinationWallet.getCurrency().getSellPrice())
+                .wallet(destinationWallet)
+                .walletTransactionType(WalletTransactionType.CREDIT)
+                .build();
+        walletTransactionRepository.save(destinationWalletTransaction);
+        destinationWallet.setBalance(destinationWallet.getBalance() + destinationAmount);
 
     }
 
